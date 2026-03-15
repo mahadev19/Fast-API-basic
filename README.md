@@ -47,7 +47,7 @@ patient-management-api
 ### 1. Clone the repository
 
 ```
-git clone https://github.com/yourusername/patient-management-api.git
+https://github.com/mahadev19/Fast-API-basic.git
 ```
 
 ### 2. Navigate to project folder
