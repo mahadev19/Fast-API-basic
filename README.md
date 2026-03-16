@@ -251,6 +251,167 @@ This project was built to practice:
 
 ---
 
+## Authentication and Authorization
+
+This project implements **JWT-based authentication and authorization** to secure API endpoints. It ensures that only authenticated users can access protected routes.
+
+### Authentication
+
+Authentication is the process of verifying **who the user is**.  
+In this project, users authenticate themselves by sending their **username and password** to the `/login` endpoint.
+
+If the credentials are correct, the API generates a **JWT (JSON Web Token)** and returns it to the user.
+
+Example login request:
+
+POST /login
+
+Example response:
+
+{
+  "access_token": "your_jwt_token",
+  "token_type": "bearer"
+}
+
+The user must use this token to access protected API endpoints.
+
+---
+
+### Authorization
+
+Authorization determines **what resources a user can access** after authentication.
+
+Protected routes require a valid JWT token in the request header.
+
+Example request header:
+
+Authorization: Bearer <your_token>
+
+FastAPI verifies the token before allowing access to the endpoint.
+
+Example of a protected route:
+
+```python
+@app.get("/patients")
+def get_patients(token: str = Depends(oauth2_scheme)):
+    return {"message": "This is a protected route"}
+## Database Integration and Migration
+
+In this project, the FastAPI application is integrated with a PostgreSQL database and uses Alembic for database migrations. This setup allows the application to store persistent data and safely manage changes to the database structure over time.
+
+### Database Integration
+
+The application connects to PostgreSQL using SQLAlchemy ORM. SQLAlchemy allows us to interact with the database using Python classes instead of writing raw SQL queries.
+
+**Key components used:**
+
+* FastAPI – API framework
+* SQLAlchemy – ORM for database operations
+* PostgreSQL – Relational database
+
+The database connection is configured in `database.py`, where the SQLAlchemy engine and session are created.
+
+Example configuration:
+
+```python
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, declarative_base
+
+DATABASE_URL = "postgresql://postgres:password@localhost:5432/fastapi_db"
+
+engine = create_engine(DATABASE_URL)
+SessionLocal = sessionmaker(bind=engine)
+Base = declarative_base()
+```
+
+Database models are defined using SQLAlchemy in `models.py`.
+
+Example:
+
+```python
+from sqlalchemy import Column, Integer, String
+from database import Base
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String)
+    email = Column(String)
+```
+
+This model creates a `users` table in the PostgreSQL database.
+
+---
+
+### Database Migration
+
+Database migrations are managed using Alembic. Migrations help track and apply schema changes such as adding new tables or columns without losing existing data.
+
+Typical migration workflow:
+
+1. Modify the SQLAlchemy model
+2. Generate a migration script
+3. Apply the migration to the database
+
+Commands used:
+
+```bash
+alembic revision --autogenerate -m "create users table"
+alembic upgrade head
+```
+
+Alembic compares the current models with the existing database schema and generates migration scripts automatically.
+
+---
+
+### Project Structure
+
+```
+FastAPI/
+│
+├── main.py
+├── database.py
+├── models.py
+├── schemas.py
+├── auth.py
+│
+├── alembic/
+│   ├── versions/
+│   └── env.py
+│
+├── alembic.ini
+└── requirements.txt
+```
+
+---
+
+### API Documentation
+
+After running the server:
+
+```
+uvicorn main:app --reload
+```
+
+Interactive API documentation is available at:
+
+```
+http://127.0.0.1:8000/docs
+```
+
+---
+
+### Summary
+
+This project demonstrates:
+
+* FastAPI API development
+* PostgreSQL database integration
+* SQLAlchemy ORM usage
+* Alembic database migrations
+* CRUD-ready database model setup
+
 ## 📜 License
 
 This project is for learning and educational purposes.
