@@ -1,14 +1,56 @@
 # Import required libraries
-from fastapi import FastAPI, Path, HTTPException, Query
+from fastapi import FastAPI, Path, HTTPException, Query , Depends
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, computed_field
 from typing import Annotated, Literal, Optional
 import json
 import os
+from fastapi.security import OAuth2PasswordRequestForm
+from auth import verify_password, create_access_token, oauth2_scheme, fake_users_db
 
-# Create FastAPI application
 app = FastAPI()
 
+
+@app.post("/login")
+def login(form_data: OAuth2PasswordRequestForm = Depends()):
+
+    user = fake_users_db.get(form_data.username)
+
+    if not user or not verify_password(form_data.password, user["password"]):
+        raise HTTPException(status_code=400, detail="Invalid credentials")
+
+    token = create_access_token({"sub": form_data.username})
+
+    return {"access_token": token, "token_type": "bearer"}
+
+
+
+@app.get("/patients")
+def get_patients(token: str = Depends(oauth2_scheme)):
+    return {"message": "This is a protected route"}
+
+from sqlalchemy.orm import Session
+
+import models
+import crud
+import schemas
+from database import engine, SessionLocal, Base
+
+Base.metadata.create_all(bind=engine)
+
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+@app.post("/users")
+def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
+    return crud.create_user(db, user)
+
+# Create FastAPI application
 # -------------------------------
 # Pydantic Model for Patient Data
 # -------------------------------
