@@ -16,38 +16,25 @@ from app import models
 from app import crud
 from app import schemas
 from app.database import engine, SessionLocal, Base
-from app.core.settings import settings                         # ← ADDED
+from app.core.settings import settings
 from prometheus_fastapi_instrumentator import Instrumentator
-import asyncio
-import httpx
+from prometheus_client import Counter
+
 # -------------------------------
 # APP INITIALIZATION
 # -------------------------------
 app = FastAPI()
 
-
-def write_log(message: str):
-    with open("log.txt", "a") as f:
-        f.write(message + "\n")
-
-@app.get("/test")
-async def test(background_tasks: BackgroundTasks):
-    background_tasks.add_task(write_log, "User accessed /test")
-    return {"message": "Response sent immediately"}
-
-# Add this
+# -------------------------------
+# PROMETHEUS METRICS
+# -------------------------------
 Instrumentator().instrument(app).expose(app)
-
-from prometheus_client import Counter
 
 REQUEST_COUNT = Counter("my_requests_total", "Total Requests")
 
-@app.get("/custom")
-def custom():
-    REQUEST_COUNT.inc()
-    return {"message": "Tracked endpoint"}
-
-# Create DB tables
+# -------------------------------
+# CREATE DB TABLES
+# -------------------------------
 Base.metadata.create_all(bind=engine)
 
 # -------------------------------
@@ -84,6 +71,13 @@ def get_db():
         db.close()
 
 # -------------------------------
+# BACKGROUND TASK HELPER
+# -------------------------------
+def write_log(message: str):
+    with open("log.txt", "a") as f:
+        f.write(message + "\n")
+
+# -------------------------------
 # ROOT
 # -------------------------------
 @app.get("/")
@@ -111,6 +105,22 @@ def error_example():
         return {"error": "Something went wrong"}
 
 # -------------------------------
+# BACKGROUND TASK TEST
+# -------------------------------
+@app.get("/test")
+async def test(background_tasks: BackgroundTasks):
+    background_tasks.add_task(write_log, "User accessed /test")
+    return {"message": "Response sent immediately"}
+
+# -------------------------------
+# CUSTOM PROMETHEUS METRIC
+# -------------------------------
+@app.get("/custom")
+def custom():
+    REQUEST_COUNT.inc()
+    return {"message": "Tracked endpoint"}
+
+# -------------------------------
 # LOGIN (RATE LIMITED)
 # -------------------------------
 @app.post("/login")
@@ -119,21 +129,21 @@ def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends()):
 
     user = fake_users_db.get(form_data.username)
 
-    # ← CHANGED: direct password comparison since db stores plain password
     if not user or form_data.password != user["password"]:
         raise HTTPException(status_code=400, detail="Invalid credentials")
 
     token = create_access_token({"sub": form_data.username})
     return {"access_token": token, "token_type": "bearer"}
+
 # -------------------------------
-# PROTECTED ROUTE — now uses env var instead of hardcoded token
-# ------------------------------- 
+# PROTECTED ROUTE
+# -------------------------------
 @app.get("/protected")
-def protected(authorization: str = Header(None)): 
+def protected(authorization: str = Header(None)):
 
-    expected = f"Bearer {settings.SECRET_KEY}"       # ← CHANGED
+    expected = f"Bearer {settings.SECRET_TOKEN}"     # ← FIXED (was SECRET_KEY)
 
-    if authorization != expected: 
+    if authorization != expected:
         raise HTTPException(status_code=401, detail="Unauthorized")
 
     return {"message": "Protected route"}
@@ -142,7 +152,7 @@ def protected(authorization: str = Header(None)):
 # PATIENTS (protected with oauth2)
 # -------------------------------
 @app.get("/patients")
-def get_patients(token: str = Depends(oauth2_scheme)):
+async def get_patients(token: str = Depends(oauth2_scheme)):
     return {"message": "This is a protected route"}
 
 # -------------------------------
@@ -220,8 +230,7 @@ def save_data(data):
 # -------------------------------
 @app.get('/view')
 def view():
-    data = load_data()
-    return data
+    return load_data()
 
 
 @app.get('/patient/{patient_id}')

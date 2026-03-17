@@ -1,7 +1,8 @@
 from datetime import datetime, timedelta
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-from app.core.settings import settings   # ✅ import settings
+from fastapi.security import OAuth2PasswordBearer
+from app.core.settings import settings
 
 # -------------------------------
 # PASSWORD HASHING
@@ -15,10 +16,23 @@ def verify_password(plain_password: str, hashed_password: str):
     return pwd_context.verify(plain_password, hashed_password)
 
 # -------------------------------
-# JWT CONFIG
+# OAUTH2 SCHEME
 # -------------------------------
-SECRET_KEY = settings.SECRET_KEY      # ✅ from .env
-ALGORITHM = "HS256"
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+
+# -------------------------------
+# FAKE USERS DB
+# -------------------------------
+fake_users_db = {
+    settings.ADMIN_USERNAME: {
+        "username": settings.ADMIN_USERNAME,
+        "password": settings.ADMIN_PASSWORD       # plain, compared directly at login
+    }
+}
+
+# -------------------------------
+# JWT CONFIG — from .env not hardcoded
+# -------------------------------
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 # -------------------------------
@@ -27,18 +41,24 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 def create_access_token(data: dict):
     to_encode = data.copy()
     expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    
     to_encode.update({"exp": expire})
-    
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
+
+    return jwt.encode(
+        to_encode,
+        settings.JWT_SECRET_KEY,                  # ← FIXED from SECRET_KEY
+        algorithm=settings.JWT_ALGORITHM          # ← FIXED from hardcoded
+    )
 
 # -------------------------------
 # VERIFY TOKEN
 # -------------------------------
 def verify_token(token: str):
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(
+            token,
+            settings.JWT_SECRET_KEY,              # ← FIXED
+            algorithms=[settings.JWT_ALGORITHM]   # ← FIXED
+        )
         return payload
     except JWTError:
         return None
