@@ -630,6 +630,88 @@ Status Code:
 * Prevents server overload
 * Ensures fair usage of resources
 * Enhances application reliability
+## 🔹 Environment Variables
+
+In this project, environment variables are used to securely manage sensitive data such as secret keys, database URLs, and configuration settings. This helps in keeping the codebase clean, secure, and production-ready.
+
+---
+
+### 📌 Why Environment Variables?
+
+* Avoid hardcoding sensitive data (e.g., passwords, API keys)
+* Improve security by keeping secrets out of source code
+* Easily configure the application for different environments (development, testing, production)
+
+---
+
+### 🛠️ Setup
+
+The project uses the `python-dotenv` library to load environment variables from a `.env` file.
+
+### Installation:
+
+```bash
+pip install python-dotenv
+```
+
+---
+
+### 📁 .env File
+
+A `.env` file is created in the project root directory to store environment variables.
+
+Example:
+
+```env
+SECRET_KEY=mysecret123
+DATABASE_URL=sqlite:///./test.db
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+```
+
+---
+
+### ⚙️ Loading Environment Variables
+
+Environment variables are loaded using `load_dotenv()` and accessed using `os.getenv()`.
+
+```python
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+SECRET_KEY = os.getenv("SECRET_KEY")
+DATABASE_URL = os.getenv("DATABASE_URL")
+```
+
+---
+
+### 🧩 Usage in Project
+
+* Used for storing JWT secret key for authentication
+* Configuring database connection
+* Managing application settings dynamically
+
+---
+
+### 🔐 Security Best Practice
+
+The `.env` file is added to `.gitignore` to prevent sensitive data from being pushed to GitHub.
+
+```
+.env
+```
+
+---
+
+### ✅ Benefits
+
+* Enhances application security
+* Keeps configuration flexible and manageable
+* Makes the project production-ready
+
+---
 
 ---
 
