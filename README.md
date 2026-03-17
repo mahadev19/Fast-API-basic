@@ -513,6 +513,125 @@ This project demonstrates:
 * SQLAlchemy ORM usage
 * Alembic database migrations
 * CRUD-ready database model setup
+## 🔹 Rate Limiting
+
+Rate limiting is implemented in this project to control the number of API requests a user can make within a specific time period. This helps protect the application from abuse, brute-force attacks, and server overload.
+
+### 📌 Why Rate Limiting?
+
+* Prevents API abuse and spam requests
+* Protects authentication endpoints (e.g., login)
+* Improves server stability and performance
+* Enhances security against brute-force attacks
+
+---
+
+### 🛠️ Implementation
+
+Rate limiting is implemented using the **SlowAPI** library.
+
+### Installation:
+
+```bash
+pip install slowapi
+```
+
+---
+
+### ⚙️ Configuration
+
+```python
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from slowapi.middleware import SlowAPIMiddleware
+
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+
+app.add_middleware(SlowAPIMiddleware)
+```
+
+---
+
+### 🚫 Exception Handling
+
+```python
+from slowapi.errors import RateLimitExceeded
+from fastapi.responses import JSONResponse
+
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_handler(request, exc):
+    return JSONResponse(
+        status_code=429,
+        content={"detail": "Too many requests"}
+    )
+```
+
+---
+
+### 🚀 Usage Example
+
+#### Root Endpoint (Limited to 5 requests per minute)
+
+```python
+@app.get("/")
+@limiter.limit("5/minute")
+def home(request: Request):
+    return {"message": "Hello World"}
+```
+
+---
+
+#### Login Endpoint (Limited to 3 requests per minute)
+
+```python
+@app.post("/login")
+@limiter.limit("3/minute")
+def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends()):
+    ...
+```
+
+---
+
+### 📊 Response on Limit Exceeded
+
+If a user exceeds the request limit:
+
+```json
+{
+  "detail": "Too many requests"
+}
+```
+
+Status Code:
+
+```
+429 Too Many Requests
+```
+
+---
+
+### 🔐 Best Practices
+
+* Apply stricter limits on sensitive endpoints like:
+
+  * Login
+  * Signup
+  * Password reset
+* Use IP-based or user-based limiting
+* Avoid exposing internal system details in error messages
+* Combine with authentication for better control
+
+---
+
+### ✅ Benefits
+
+* Improves API security
+* Prevents server overload
+* Ensures fair usage of resources
+* Enhances application reliability
+
+---
 
 ## 📜 License
 
