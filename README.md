@@ -401,6 +401,108 @@ http://127.0.0.1:8000/docs
 ```
 
 ---
+## 🔹 Logging
+
+In this project, logging is implemented to monitor application behavior, track requests, and debug issues effectively. Instead of using print statements, Python’s built-in `logging` module is used.
+
+### Features:
+
+* Logs incoming API requests and response status codes
+* Captures errors and exceptions
+* Stores logs in a structured format with timestamps
+* Helps in debugging and monitoring the application
+
+### Logging Configuration:
+
+* Logging level is set to `INFO`
+* Log format includes:
+
+  * Timestamp
+  * Log level
+  * Message
+
+### Example Log Output:
+
+```
+2026-03-17 12:00:01 - INFO - Request: GET /users
+2026-03-17 12:00:01 - INFO - Response status: 200
+2026-03-17 12:00:05 - ERROR - Error occurred: division by zero
+```
+
+### Middleware Logging:
+
+A custom middleware is used to log every request and response:
+
+* Logs HTTP method and endpoint
+* Logs response status code
+
+---
+
+## 🔹 API Testing
+
+API testing is implemented to ensure that all endpoints work correctly and handle different scenarios such as success, failure, and authentication.
+
+### Tools Used:
+
+* FastAPI `TestClient`
+* Pytest
+
+### Test Coverage:
+
+The following test cases are implemented:
+
+1. **User Creation Test**
+
+   * Verifies that a new user can be created successfully
+   * Checks response status and returned data
+
+2. **Error Handling Test**
+
+   * Sends request to an invalid endpoint
+   * Ensures API returns `404 Not Found`
+
+3. **Login Test**
+
+   * Verifies user authentication
+   * Checks if access token is generated
+
+4. **Protected Route Test**
+
+   * Tests authorization using Bearer token
+   * Ensures only authenticated users can access protected endpoints
+
+### Running Tests:
+
+To run all tests, use the following command:
+
+```bash
+pytest
+```
+
+### Example Output:
+
+```
+4 passed in 0.50s
+```
+
+### Key Benefits:
+
+* Ensures API reliability
+* Detects bugs early
+* Validates authentication and authorization
+* Helps maintain code quality during updates
+
+---
+
+## 🔹 Project Structure (Testing)
+
+```
+project/
+│
+├── main.py
+├── tests/
+│   └── test_main.py
+```
 
 ### Summary
 
