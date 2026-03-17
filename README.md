@@ -714,6 +714,187 @@ The `.env` file is added to `.gitignore` to prevent sensitive data from being pu
 ---
 
 ---
+## 📊 Monitoring & Metrics (Prometheus + Grafana)
+
+This project includes production-ready monitoring using **Prometheus** and **Grafana** to track API performance, request rates, latency, and errors in real time.
+
+---
+
+### 🚀 Overview
+
+Monitoring is implemented to observe API behavior and ensure reliability. The system follows this flow:
+
+```
+FastAPI → /metrics → Prometheus → Grafana Dashboard
+```
+
+* **FastAPI** exposes metrics
+* **Prometheus** collects and stores metrics
+* **Grafana** visualizes metrics in dashboards
+
+---
+
+### ⚙️ FastAPI Integration
+
+The API is instrumented using:
+
+```python
+from prometheus_fastapi_instrumentator import Instrumentator
+
+Instrumentator().instrument(app).expose(app)
+```
+
+This automatically exposes a `/metrics` endpoint.
+
+---
+
+### 🔗 Metrics Endpoint
+
+After running the server:
+
+```
+http://localhost:8000/metrics
+```
+
+This endpoint provides metrics such as:
+
+* `http_requests_total`
+* `http_request_duration_seconds`
+* `http_responses_total`
+
+---
+
+### 🐳 Docker Setup
+
+#### 1. prometheus.yml
+
+```yaml
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: "fastapi"
+    static_configs:
+      - targets: ["host.docker.internal:8000"]
+```
+
+---
+
+#### 2. docker-compose.yml
+
+```yaml
+version: "3"
+
+services:
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+      - "3000:3000"
+```
+
+---
+
+### ▶️ Run the Monitoring Stack
+
+```bash
+docker-compose up -d
+```
+
+---
+
+### 🌐 Access Services
+
+* **Prometheus UI:** http://localhost:9090
+* **Grafana Dashboard:** http://localhost:3000
+
+Default Grafana login:
+
+```
+username: admin
+password: admin
+```
+
+---
+
+### 🔌 Configure Grafana
+
+1. Go to **Settings → Data Sources**
+2. Add **Prometheus**
+3. Set URL:
+
+   ```
+   http://prometheus:9090
+   ```
+4. Click **Save & Test**
+
+---
+
+### 📈 Example Queries
+
+Use these in Grafana panels:
+
+* Total requests:
+
+  ```
+  http_requests_total
+  ```
+
+* Requests per second:
+
+  ```
+  rate(http_requests_total[1m])
+  ```
+
+* Error tracking:
+
+  ```
+  http_responses_total{status="500"}
+  ```
+
+* Request latency:
+
+  ```
+  http_request_duration_seconds
+  ```
+
+---
+
+### 🎯 Benefits
+
+* Monitor API performance in real time
+* Track request volume and traffic spikes
+* Identify slow endpoints and bottlenecks
+* Detect errors and failures quickly
+* Improve system reliability
+
+---
+
+### 💡 Use Case
+
+This setup is useful for:
+
+* Production APIs
+* Microservices monitoring
+* Machine Learning model APIs
+* Real-time system performance tracking
+
+---
+
+### 🧠 Interview Note
+
+> Prometheus and Grafana are used to monitor API performance by collecting metrics such as request count, latency, and error rates, and visualizing them through dashboards to ensure system reliability.
+
+---
+
 
 ## 📜 License
 
