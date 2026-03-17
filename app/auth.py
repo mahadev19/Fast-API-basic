@@ -1,41 +1,44 @@
-from fastapi.security import OAuth2PasswordBearer
-from jose import jwt
+from datetime import datetime, timedelta
+from jose import JWTError, jwt
 from passlib.context import CryptContext
-from app.config import settings
+from app.core.settings import settings   # ✅ import settings
 
 # -------------------------------
-# SECURITY SETUP
+# PASSWORD HASHING
 # -------------------------------
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
-
-# -------------------------------
-# FAKE USERS DB
-# — store plain password, hash only at verify time
-# -------------------------------
-fake_users_db = {
-    settings.admin_username: {
-        "username": settings.admin_username,
-        "password": settings.admin_password        # ← CHANGED: no hashing here
-    }
-}
-
-# -------------------------------
-# PASSWORD HELPERS
-# -------------------------------
-def verify_password(plain: str, hashed: str) -> bool:
-    return pwd_context.verify(plain, hashed)       # still verifies correctly
-
-def hash_password(password: str) -> str:
+def hash_password(password: str):
     return pwd_context.hash(password)
 
+def verify_password(plain_password: str, hashed_password: str):
+    return pwd_context.verify(plain_password, hashed_password)
+
 # -------------------------------
-# JWT TOKEN
+# JWT CONFIG
 # -------------------------------
-def create_access_token(data: dict) -> str:
-    return jwt.encode(
-        data,
-        settings.jwt_secret_key,
-        algorithm=settings.jwt_algorithm
-    )
+SECRET_KEY = settings.SECRET_KEY      # ✅ from .env
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
+# -------------------------------
+# CREATE TOKEN
+# -------------------------------
+def create_access_token(data: dict):
+    to_encode = data.copy()
+    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    
+    to_encode.update({"exp": expire})
+    
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+# -------------------------------
+# VERIFY TOKEN
+# -------------------------------
+def verify_token(token: str):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return payload
+    except JWTError:
+        return None

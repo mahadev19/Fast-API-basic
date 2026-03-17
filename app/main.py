@@ -16,7 +16,7 @@ from app import models
 from app import crud
 from app import schemas
 from app.database import engine, SessionLocal, Base
-from app.config import settings                          # ← ADDED
+from app.core.settings import settings                         # ← ADDED
 from prometheus_fastapi_instrumentator import Instrumentator
 import asyncio
 import httpx
@@ -131,7 +131,7 @@ def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends()):
 @app.get("/protected")
 def protected(authorization: str = Header(None)): 
 
-    expected = f"Bearer {settings.secret_token}"        # ← CHANGED
+    expected = f"Bearer {settings.SECRET_KEY}"       # ← CHANGED
 
     if authorization != expected: 
         raise HTTPException(status_code=401, detail="Unauthorized")

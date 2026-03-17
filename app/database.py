@@ -1,13 +1,20 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
-from app.config import settings                          # ← ADDED
+from app.core.settings import settings   # ✅ correct import
 
 # -------------------------------
 # DATABASE SETUP
-# — URL loaded from .env instead of hardcoded
 # -------------------------------
-engine = create_engine(settings.database_url)        # ← CHANGED
 
-SessionLocal = sessionmaker(bind=engine)
+engine = create_engine(
+    settings.DATABASE_URL,   # ✅ FIXED (uppercase)
+    connect_args={"check_same_thread": False}  # needed for SQLite
+)
+
+SessionLocal = sessionmaker(
+    autocommit=False,
+    autoflush=False,
+    bind=engine
+)
 
 Base = declarative_base()
