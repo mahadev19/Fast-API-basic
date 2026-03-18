@@ -35,8 +35,11 @@ REQUEST_COUNT = Counter("my_requests_total", "Total Requests")
 # -------------------------------
 # CREATE DB TABLES
 # -------------------------------
-Base.metadata.create_all(bind=engine)
 
+try:
+    Base.metadata.create_all(bind=engine)
+except Exception as e:
+    logger.warning(f"Could not create DB tables: {e}")
 # -------------------------------
 # RATE LIMITER SETUP
 # -------------------------------

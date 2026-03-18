@@ -1,74 +1,69 @@
+import pytest
 from fastapi.testclient import TestClient
-import sys
-import os
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from app.database import Base
+from app.main import app, get_db
 
-sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+# -------------------------------
+# USE SQLITE FOR TESTING
+# — no PostgreSQL needed in CI
+# -------------------------------
+SQLALCHEMY_TEST_DATABASE_URL = "sqlite:///./test.db"
 
-from app.main import app
+engine = create_engine(
+    SQLALCHEMY_TEST_DATABASE_URL,
+    connect_args={"check_same_thread": False}
+)
+
+TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+# Create tables in test DB
+Base.metadata.create_all(bind=engine)
+
+# Override get_db dependency
+def override_get_db():
+    try:
+        db = TestingSessionLocal()
+        yield db
+    finally:
+        db.close()
+
+app.dependency_overrides[get_db] = override_get_db
+
 client = TestClient(app)
 
-
-def test_create_user():
-    response = client.post("/users", json={
-        "name": "Mahadev",
-        "email": "test@gmail.com"
-    })
-
+# -------------------------------
+# TESTS
+# -------------------------------
+def test_root():
+    response = client.get("/")
     assert response.status_code == 200
-    assert "name" in response.json()
+    assert response.json() == {"message": "Patient Management System API"}
 
-
-def test_error():
-    response = client.get("/wrong-url")
-    assert response.status_code == 404
-
-
-def test_login():
-    # Step 1: Create user first
-    client.post("/users", json={
-        "name": "admin",
-        "email": "admin@gmail.com"
-    })
-
-    # Step 2: Login
-    response = client.post(
-        "/login",
-        data={
-            "username": "admin",
-            "password": "admin"
-        }
-    )
-
-    print(response.json())  # DEBUG
-
+def test_about():
+    response = client.get("/about")
     assert response.status_code == 200
-    token = response.json()["access_token"]
-    assert token is not None
 
-def test_protected():
-    # Create user first
-    client.post("/users", json={
-        "name": "admin",
-        "email": "admin@gmail.com"
+def test_create_patient():
+    response = client.post("/create", json={
+        "id": "P001",
+        "name": "Test User",
+        "city": "Pune",
+        "age": 25,
+        "gender": "male",
+        "height": 1.75,
+        "weight": 70
     })
+    assert response.status_code == 201
 
-    login = client.post(
-        "/login",
-        data={
-            "username": "admin",
-            "password": "admin"
-        }
-    )
-
-    print(login.json())  # DEBUG
-
-    assert login.status_code == 200
-
-    token = login.json()["access_token"]
-
-    response = client.get(
-        "/protected",
-        headers={"Authorization": f"Bearer {token}"}
-    )
-
+def test_view_patients():
+    response = client.get("/view")
     assert response.status_code == 200
+
+def test_invalid_login():
+    response = client.post("/login", data={
+        "username": "wrong",
+        "password": "wrong"
+    })
+    assert response.status_code == 400

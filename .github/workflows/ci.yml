@@ -10,24 +10,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-    # -------------------------------
-    # SPIN UP POSTGRES FOR TESTING
-    # -------------------------------
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: jonsnow
-          POSTGRES_DB: fastapi_db
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -44,7 +26,7 @@ jobs:
 
     - name: Create .env file
       run: |
-        echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> .env
+        echo "DATABASE_URL=sqlite:///./test.db" >> .env
         echo "ADMIN_USERNAME=${{ secrets.ADMIN_USERNAME }}" >> .env
         echo "ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }}" >> .env
         echo "SECRET_TOKEN=${{ secrets.SECRET_TOKEN }}" >> .env
@@ -52,10 +34,9 @@ jobs:
         echo "JWT_ALGORITHM=HS256" >> .env
 
     - name: Run tests
-      run: |
-        pytest tests/ -v
+      run: pytest tests/ -v
       env:
-        DATABASE_URL: postgresql://postgres:jonsnow@localhost:5432/fastapi_db
+        DATABASE_URL: sqlite:///./test.db
         ADMIN_USERNAME: ${{ secrets.ADMIN_USERNAME }}
         ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
         SECRET_TOKEN: ${{ secrets.SECRET_TOKEN }}
