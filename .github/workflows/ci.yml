@@ -10,6 +10,14 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    env:
+      DATABASE_URL: sqlite:///./test.db        # ← SET GLOBALLY, overrides .env
+      ADMIN_USERNAME: ${{ secrets.ADMIN_USERNAME }}
+      ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+      SECRET_TOKEN: ${{ secrets.SECRET_TOKEN }}
+      JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
+      JWT_ALGORITHM: HS256
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -26,7 +34,7 @@ jobs:
 
     - name: Create .env file
       run: |
-        echo "DATABASE_URL=sqlite:///./test.db" >> .env
+        echo "DATABASE_URL=sqlite:///./test.db" > .env
         echo "ADMIN_USERNAME=${{ secrets.ADMIN_USERNAME }}" >> .env
         echo "ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }}" >> .env
         echo "SECRET_TOKEN=${{ secrets.SECRET_TOKEN }}" >> .env
@@ -35,10 +43,3 @@ jobs:
 
     - name: Run tests
       run: pytest tests/ -v
-      env:
-        DATABASE_URL: sqlite:///./test.db
-        ADMIN_USERNAME: ${{ secrets.ADMIN_USERNAME }}
-        ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
-        SECRET_TOKEN: ${{ secrets.SECRET_TOKEN }}
-        JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
-        JWT_ALGORITHM: HS256

@@ -36,6 +36,7 @@ REQUEST_COUNT = Counter("my_requests_total", "Total Requests")
 # CREATE DB TABLES
 # -------------------------------
 
+# CREATE DB TABLES
 try:
     Base.metadata.create_all(bind=engine)
 except Exception as e:
